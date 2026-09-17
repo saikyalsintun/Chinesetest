@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>Chinese Class</title>
+
+    <link
+        rel="stylesheet"
+        href="style.css"
+    >
+</head>
+
+<body>
+
+    <!-- =========================
+         LOGIN PAGE
+    ========================== -->
+
+    <div
+        id="loginPage"
+        class="page"
+    >
+
+        <div class="login-box">
+
+            <h1>中文课堂</h1>
+
+            <p class="subtitle">
+                Chinese Class
+            </p>
+
+            <form id="loginForm">
+
+                <label>
+                    Username
+                </label>
+
+                <input
+                    type="text"
+                    id="username"
+                    placeholder="Enter username"
+                    required
+                >
+
+                <label>
+                    Password
+                </label>
+
+                <input
+                    type="password"
+                    id="password"
+                    placeholder="Enter password"
+                    required
+                >
+
+                <button
+                    type="submit"
+                    class="primary-button"
+                >
+                    Login
+                </button>
+
+                <p
+                    id="loginMessage"
+                    class="message"
+                ></p>
+
+            </form>
+
+        </div>
+
+    </div>
+
+
+    <!-- =========================
+         DASHBOARD
+    ========================== -->
+
+    <div
+        id="dashboardPage"
+        class="page hidden"
+    >
+
+        <header class="topbar">
+
+            <div>
+                <h2>Chinese Class</h2>
+            </div>
+
+            <button
+                class="logout-button"
+                onclick="logout()"
+            >
+                Logout
+            </button>
+
+        </header>
+
+
+        <main class="container">
+
+            <div class="welcome-card">
+
+                <p>Welcome</p>
+
+                <h1 id="studentName">
+                    Student
+                </h1>
+
+            </div>
+
+
+            <h2 class="section-title">
+                Chapters
+            </h2>
+
+
+            <div
+                id="chapterList"
+                class="chapter-list"
+            >
+
+                <!-- Chapters will appear here -->
+
+            </div>
+
+        </main>
+
+    </div>
+
+
+    <!-- =========================
+         EXAM PAGE
+    ========================== -->
+
+    <div
+        id="examPage"
+        class="page hidden"
+    >
+
+        <header class="exam-header">
+
+            <button
+                onclick="backToDashboard()"
+                class="back-button"
+            >
+                ←
+            </button>
+
+            <div>
+
+                <h2 id="examTitle">
+                    Chapter
+                </h2>
+
+                <p id="examSubtitle">
+                    Chinese Exercise
+                </p>
+
+            </div>
+
+        </header>
+
+
+        <main class="exam-container">
+
+            <div
+                id="examContent"
+            >
+
+                <!-- Exam questions appear here -->
+
+            </div>
+
+
+            <button
+                onclick="submitExam()"
+                class="submit-button"
+            >
+                Submit Exam
+            </button>
+
+        </main>
+
+    </div>
+
+
+    <!-- =========================
+         RESULT PAGE
+    ========================== -->
+
+    <div
+        id="resultPage"
+        class="page hidden"
+    >
+
+        <div class="result-box">
+
+            <div class="result-icon">
+                ✓
+            </div>
+
+            <h1>
+                Exam Submitted
+            </h1>
+
+            <p>
+                Your answers have been submitted.
+            </p>
+
+            <button
+                onclick="backToDashboard()"
+                class="primary-button"
+            >
+                Back to Dashboard
+            </button>
+
+        </div>
+
+    </div>
+
+
+    <script src="script.js"></script>
+
+</body>
+</html>
