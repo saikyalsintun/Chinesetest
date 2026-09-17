@@ -1,203 +1,102 @@
 /* =========================================================
-   SIMPLE CHINESE CLASS WEBSITE
+   CHINESE CLASS - SIMPLE SCRIPT
 ========================================================= */
 
 
-/* =========================
-   SAMPLE LOGIN DATA
+/* =========================================================
+   API
+========================================================= */
 
-   Later this will come from
-   Google Sheets through Code.gs.
-========================= */
-
-const students = [
-    {
-        username: "student01",
-        password: "123456",
-        name: "Student One"
-    },
-
-    {
-        username: "student02",
-        password: "abc123",
-        name: "Student Two"
-    }
-];
+const API_URL =
+    "https://script.google.com/macros/s/AKfycbyQGOCKUtXI2JpEZQSYywauvzUlkiZpbOP_uhScvFo3130MEl9t-Q5krOZ6dFfg9bnZ/exec";
 
 
-/* =========================
-   SAMPLE CHAPTER DATA
-
-   Later this will come from
-   Google Drive JSON files.
-========================= */
-
-const chapters = [
-
-    {
-        chapter: "Chapter 1",
-        title: "Basic Chinese",
-        description: "Basic Chinese practice",
-
-        parts: {
-
-            part1: [
-                {
-                    id: 1,
-                    question:
-                        "Translate into Chinese Pinyin: မင်္ဂလာပါ"
-                },
-
-                {
-                    id: 2,
-                    question:
-                        "Translate into Chinese Pinyin: ကျေးဇူးတင်ပါတယ်"
-                }
-            ],
-
-
-            part2: [
-                {
-                    id: 1,
-                    question:
-                        "Nǐ jiào shénme míngzi?"
-                },
-
-                {
-                    id: 2,
-                    question:
-                        "Nǐ shì nǎ guó rén?"
-                }
-            ],
-
-
-            part3: [
-                {
-                    id: 1,
-
-                    words: [
-                        "jiào",
-                        "wǒ",
-                        "Shénme",
-                        "míngzi"
-                    ],
-
-                    answer:
-                        "wǒ jiào shénme míngzi"
-                },
-
-                {
-                    id: 2,
-
-                    words: [
-                        "hǎo",
-                        "nǐ",
-                        "ma"
-                    ],
-
-                    answer:
-                        "nǐ hǎo ma"
-                }
-            ]
-
-        }
-    },
-
-
-    {
-        chapter: "Chapter 2",
-
-        title: "Daily Life",
-
-        description:
-            "Chinese vocabulary and daily conversation",
-
-        parts: {
-
-            part1: [
-                {
-                    id: 1,
-
-                    question:
-                        "Translate into Chinese Pinyin: ကျွန်တော် မနက် ၇ နာရီမှာ အိပ်ရာထတယ်။"
-                }
-            ],
-
-            part2: [
-                {
-                    id: 1,
-
-                    question:
-                        "Nǐ shénme shíhòu qǐchuáng?"
-                }
-            ],
-
-            part3: [
-                {
-                    id: 1,
-
-                    words: [
-                        "qǐchuáng",
-                        "wǒ",
-                        "qī",
-                        "diǎn"
-                    ],
-
-                    answer:
-                        "wǒ qī diǎn qǐchuáng"
-                }
-            ]
-
-        }
-    }
-
-];
-
-
-/* =========================
-   CURRENT USER
-========================= */
+/* =========================================================
+   STATE
+========================================================= */
 
 let currentUser = null;
 
-
-/* =========================
-   CURRENT EXAM
-========================= */
+let currentExam = null;
 
 let currentChapter = null;
 
-
-/* =========================
-   STUDENT ANSWERS
-========================= */
-
-let studentAnswers = {};
+let scrambleAnswers = {};
 
 
-/* =========================
+/* =========================================================
    PAGE ELEMENTS
-========================= */
+========================================================= */
 
 const loginPage =
-    document.getElementById(
-        "loginPage"
-    );
+    document.getElementById("loginPage");
 
 const dashboardPage =
-    document.getElementById(
-        "dashboardPage"
-    );
+    document.getElementById("dashboardPage");
 
 const examPage =
-    document.getElementById(
-        "examPage"
-    );
+    document.getElementById("examPage");
 
 const resultPage =
-    document.getElementById(
-        "resultPage"
-    );
+    document.getElementById("resultPage");
+
+
+/* =========================================================
+   API FUNCTION
+========================================================= */
+
+async function api(action, data = {}) {
+
+    try {
+
+        const response = await fetch(
+            API_URL,
+            {
+                method: "POST",
+
+                headers: {
+                    "Content-Type":
+                        "text/plain;charset=utf-8"
+                },
+
+                body: JSON.stringify({
+                    action: action,
+                    ...data
+                })
+            }
+        );
+
+
+        if (!response.ok) {
+
+            throw new Error(
+                "Server error: " +
+                response.status
+            );
+
+        }
+
+
+        const result =
+            await response.json();
+
+
+        return result;
+
+
+    } catch (error) {
+
+        console.error(
+            "API Error:",
+            error
+        );
+
+
+        throw error;
+
+    }
+
+}
 
 
 /* =========================================================
@@ -208,72 +107,89 @@ document
     .getElementById("loginForm")
     .addEventListener(
         "submit",
-        function(event) {
+        async function(event) {
 
             event.preventDefault();
 
 
             const username =
                 document
-                    .getElementById(
-                        "username"
-                    )
+                    .getElementById("username")
                     .value
                     .trim();
 
 
             const password =
                 document
-                    .getElementById(
-                        "password"
-                    )
+                    .getElementById("password")
                     .value
                     .trim();
 
 
-            const student =
-                students.find(
-                    function(user) {
-
-                        return (
-                            user.username ===
-                                username
-                            &&
-                            user.password ===
-                                password
-                        );
-
-                    }
-                );
-
-
-            if (!student) {
-
+            const message =
                 document
                     .getElementById(
                         "loginMessage"
-                    )
-                    .textContent =
-                    "Invalid username or password.";
+                    );
+
+
+            if (!username || !password) {
+
+                message.textContent =
+                    "Please enter username and password.";
 
                 return;
 
             }
 
 
-            currentUser =
-                student;
+            message.textContent =
+                "Logging in...";
 
 
-            document
-                .getElementById(
-                    "loginMessage"
-                )
-                .textContent =
-                "";
+            try {
+
+                const result =
+                    await api(
+                        "login",
+                        {
+                            username: username,
+                            password: password
+                        }
+                    );
 
 
-            showDashboard();
+                if (
+                    !result ||
+                    !result.success
+                ) {
+
+                    message.textContent =
+                        result?.message ||
+                        "Invalid username or password.";
+
+                    return;
+
+                }
+
+
+                currentUser =
+                    result.student;
+
+
+                message.textContent =
+                    "";
+
+
+                showDashboard();
+
+
+            } catch (error) {
+
+                message.textContent =
+                    "Unable to connect to the server.";
+
+            }
 
         }
     );
@@ -283,13 +199,9 @@ document
    SHOW DASHBOARD
 ========================================================= */
 
-function showDashboard() {
+async function showDashboard() {
 
     loginPage.classList.add(
-        "hidden"
-    );
-
-    dashboardPage.classList.remove(
         "hidden"
     );
 
@@ -301,25 +213,28 @@ function showDashboard() {
         "hidden"
     );
 
+    dashboardPage.classList.remove(
+        "hidden"
+    );
+
 
     document
-        .getElementById(
-            "studentName"
-        )
+        .getElementById("studentName")
         .textContent =
-        currentUser.name;
+        currentUser?.username ||
+        "Student";
 
 
-    renderChapters();
+    await loadChapters();
 
 }
 
 
 /* =========================================================
-   RENDER CHAPTERS
+   LOAD CHAPTERS
 ========================================================= */
 
-function renderChapters() {
+async function loadChapters() {
 
     const container =
         document.getElementById(
@@ -327,55 +242,140 @@ function renderChapters() {
         );
 
 
-    container.innerHTML = "";
+    container.innerHTML = `
+
+        <div class="chapter-card">
+
+            <p>
+                Loading chapters...
+            </p>
+
+        </div>
+
+    `;
 
 
-    chapters.forEach(
-        function(chapter, index) {
+    try {
 
-            const card =
-                document.createElement(
-                    "div"
-                );
-
-
-            card.className =
-                "chapter-card";
+        const result =
+            await api(
+                "getChapters"
+            );
 
 
-            card.onclick =
-                function() {
+        if (
+            !result ||
+            !result.success
+        ) {
 
-                    openChapter(
-                        index
-                    );
-
-                };
-
-
-            card.innerHTML = `
-
-                <div class="chapter-number">
-                    ${chapter.chapter}
-                </div>
-
-                <h3>
-                    ${chapter.title}
-                </h3>
-
-                <p>
-                    ${chapter.description}
-                </p>
-
-            `;
-
-
-            container.appendChild(
-                card
+            throw new Error(
+                result?.message ||
+                "Unable to load chapters."
             );
 
         }
-    );
+
+
+        const chapters =
+            result.chapters || [];
+
+
+        if (
+            chapters.length === 0
+        ) {
+
+            container.innerHTML = `
+
+                <div class="chapter-card">
+
+                    <p>
+                        No chapters available.
+                    </p>
+
+                </div>
+
+            `;
+
+            return;
+
+        }
+
+
+        container.innerHTML = "";
+
+
+        chapters.forEach(
+            function(chapter) {
+
+                const card =
+                    document.createElement(
+                        "div"
+                    );
+
+
+                card.className =
+                    "chapter-card";
+
+
+                card.innerHTML = `
+
+                    <div class="chapter-number">
+                        ${escapeHTML(
+                            chapter.chapter
+                        )}
+                    </div>
+
+                    <h3>
+                        ${escapeHTML(
+                            chapter.title
+                        )}
+                    </h3>
+
+                    <p>
+                        Start exercise
+                    </p>
+
+                `;
+
+
+                card.addEventListener(
+                    "click",
+                    function() {
+
+                        openChapter(
+                            chapter.chapter
+                        );
+
+                    }
+                );
+
+
+                container.appendChild(
+                    card
+                );
+
+            }
+        );
+
+
+    } catch (error) {
+
+        console.error(error);
+
+
+        container.innerHTML = `
+
+            <div class="chapter-card">
+
+                <p>
+                    Unable to load chapters.
+                </p>
+
+            </div>
+
+        `;
+
+    }
 
 }
 
@@ -384,24 +384,11 @@ function renderChapters() {
    OPEN CHAPTER
 ========================================================= */
 
-function openChapter(index) {
-
-    currentChapter =
-        chapters[index];
-
-
-    studentAnswers = {};
-
+async function openChapter(
+    chapterName
+) {
 
     dashboardPage.classList.add(
-        "hidden"
-    );
-
-    loginPage.classList.add(
-        "hidden"
-    );
-
-    resultPage.classList.add(
         "hidden"
     );
 
@@ -411,22 +398,114 @@ function openChapter(index) {
 
 
     document
-        .getElementById(
-            "examTitle"
-        )
+        .getElementById("examTitle")
         .textContent =
-        currentChapter.chapter;
+        chapterName;
 
 
     document
-        .getElementById(
-            "examSubtitle"
-        )
+        .getElementById("examSubtitle")
         .textContent =
-        currentChapter.title;
+        "Loading...";
 
 
-    renderExam();
+    const content =
+        document.getElementById(
+            "examContent"
+        );
+
+
+    content.innerHTML = `
+
+        <div class="question-card">
+
+            <p>
+                Loading exam...
+            </p>
+
+        </div>
+
+    `;
+
+
+    scrambleAnswers = {};
+
+
+    try {
+
+        const result =
+            await api(
+                "getExam",
+                {
+                    chapter:
+                        chapterName
+                }
+            );
+
+
+        if (
+            !result ||
+            !result.success
+        ) {
+
+            throw new Error(
+                result?.message ||
+                "Unable to load exam."
+            );
+
+        }
+
+
+        currentExam =
+            result.exam;
+
+
+        currentChapter =
+            chapterName;
+
+
+        document
+            .getElementById(
+                "examTitle"
+            )
+            .textContent =
+            currentExam.chapter ||
+            chapterName;
+
+
+        document
+            .getElementById(
+                "examSubtitle"
+            )
+            .textContent =
+            currentExam.title ||
+            "Chinese Exercise";
+
+
+        renderExam();
+
+
+    } catch (error) {
+
+        console.error(error);
+
+
+        content.innerHTML = `
+
+            <div class="question-card">
+
+                <p>
+                    ${escapeHTML(
+                        error.message ||
+                        "Unable to load exam."
+                    )}
+                </p>
+
+            </div>
+
+        `;
+
+    }
 
 }
 
@@ -446,104 +525,121 @@ function renderExam() {
     container.innerHTML = "";
 
 
-    /* =========================
-       PART 1
-    ========================== */
+    if (
+        !currentExam ||
+        !currentExam.parts
+    ) {
 
-    const part1Title =
-        document.createElement(
-            "h2"
+        container.innerHTML = `
+
+            <div class="question-card">
+
+                <p>
+                    No exam questions found.
+                </p>
+
+            </div>
+
+        `;
+
+        return;
+
+    }
+
+
+    /*
+     * Part 1
+     */
+
+    const part1 =
+        currentExam.parts
+            .part1_translation;
+
+
+    if (
+        part1 &&
+        part1.questions
+    ) {
+
+        addPartTitle(
+            container,
+            "Part 1 — Translation"
         );
 
-    part1Title.className =
-        "part-title";
 
-    part1Title.textContent =
-        "Part 1 — Translation";
-
-    container.appendChild(
-        part1Title
-    );
-
-
-    currentChapter
-        .parts
-        .part1
-        .forEach(
+        part1.questions.forEach(
             function(question) {
 
                 container.appendChild(
                     createTextQuestion(
                         question,
-                        "part1"
+                        "part1_translation"
                     )
                 );
 
             }
         );
 
+    }
 
-    /* =========================
-       PART 2
-    ========================== */
 
-    const part2Title =
-        document.createElement(
-            "h2"
+    /*
+     * Part 2
+     */
+
+    const part2 =
+        currentExam.parts
+            .part2_question;
+
+
+    if (
+        part2 &&
+        part2.questions
+    ) {
+
+        addPartTitle(
+            container,
+            "Part 2 — Question"
         );
 
-    part2Title.className =
-        "part-title";
 
-    part2Title.textContent =
-        "Part 2 — Question";
-
-    container.appendChild(
-        part2Title
-    );
-
-
-    currentChapter
-        .parts
-        .part2
-        .forEach(
+        part2.questions.forEach(
             function(question) {
 
                 container.appendChild(
                     createTextQuestion(
                         question,
-                        "part2"
+                        "part2_question"
                     )
                 );
 
             }
         );
 
+    }
 
-    /* =========================
-       PART 3
-    ========================== */
 
-    const part3Title =
-        document.createElement(
-            "h2"
+    /*
+     * Part 3
+     */
+
+    const part3 =
+        currentExam.parts
+            .part3_scramble;
+
+
+    if (
+        part3 &&
+        part3.questions
+    ) {
+
+        addPartTitle(
+            container,
+            "Part 3 — Scramble"
         );
 
-    part3Title.className =
-        "part-title";
 
-    part3Title.textContent =
-        "Part 3 — Scramble";
-
-    container.appendChild(
-        part3Title
-    );
-
-
-    currentChapter
-        .parts
-        .part3
-        .forEach(
+        part3.questions.forEach(
             function(question) {
 
                 container.appendChild(
@@ -554,6 +650,38 @@ function renderExam() {
 
             }
         );
+
+    }
+
+}
+
+
+/* =========================================================
+   PART TITLE
+========================================================= */
+
+function addPartTitle(
+    container,
+    title
+) {
+
+    const heading =
+        document.createElement(
+            "h2"
+        );
+
+
+    heading.className =
+        "part-title";
+
+
+    heading.textContent =
+        title;
+
+
+    container.appendChild(
+        heading
+    );
 
 }
 
@@ -580,18 +708,26 @@ function createTextQuestion(
     card.innerHTML = `
 
         <div class="question-number">
-            Question ${question.id}
+            Question ${escapeHTML(
+                String(question.id)
+            )}
         </div>
 
         <div class="question-text">
-            ${question.question}
+            ${escapeHTML(
+                question.question || ""
+            )}
         </div>
 
         <input
             type="text"
             class="answer-input"
-            id="${part}-${question.id}"
+            data-part="${escapeHTML(part)}"
+            data-question-id="${escapeHTML(
+                String(question.id)
+            )}"
             placeholder="Your answer"
+            autocomplete="off"
         >
 
     `;
@@ -620,30 +756,29 @@ function createScrambleQuestion(
         "question-card";
 
 
+    const questionId =
+        String(question.id);
+
+
     const words =
-        [...question.words];
+        [...(
+            question.words || []
+        )];
 
 
     /*
-     * Randomize words.
+     * Shuffle words.
      */
 
-    words.sort(
-        function() {
-
-            return Math.random() - 0.5;
-
-        }
-    );
-
-
-    let selectedWords = [];
+    shuffle(words);
 
 
     card.innerHTML = `
 
         <div class="question-number">
-            Question ${question.id}
+            Question ${escapeHTML(
+                questionId
+            )}
         </div>
 
         <div class="question-text">
@@ -654,22 +789,40 @@ function createScrambleQuestion(
 
         <div
             class="scramble-answer"
-            id="scramble-answer-${question.id}"
+            id="scramble-answer-${escapeHTML(
+                questionId
+            )}"
         >
             Select the words...
         </div>
 
+        <button
+            type="button"
+            class="word-reset-button"
+        >
+            Reset
+        </button>
+
     `;
 
 
-    const wordsContainer =
+    const wordContainer =
         card.querySelector(
             ".scramble-words"
         );
 
 
+    const answerContainer =
+        card.querySelector(
+            ".scramble-answer"
+        );
+
+
+    let selectedWords = [];
+
+
     words.forEach(
-        function(word) {
+        function(word, index) {
 
             const button =
                 document.createElement(
@@ -689,13 +842,24 @@ function createScrambleQuestion(
                 word;
 
 
-            button.onclick =
+            button.dataset.index =
+                index;
+
+
+            button.addEventListener(
+                "click",
                 function() {
 
+                    /*
+                     * Don't allow the same
+                     * button to be selected twice.
+                     */
+
                     if (
-                        selectedWords.includes(
-                            word
-                        )
+                        button.classList
+                            .contains(
+                                "selected"
+                            )
                     ) {
 
                         return;
@@ -713,12 +877,13 @@ function createScrambleQuestion(
                     );
 
 
-                    updateScrambleAnswer();
+                    updateAnswer();
 
-                };
+                }
+            );
 
 
-            wordsContainer.appendChild(
+            wordContainer.appendChild(
                 button
             );
 
@@ -726,24 +891,51 @@ function createScrambleQuestion(
     );
 
 
-    function updateScrambleAnswer() {
+    card
+        .querySelector(
+            ".word-reset-button"
+        )
+        .addEventListener(
+            "click",
+            function() {
 
-        const answerBox =
-            card.querySelector(
-                ".scramble-answer"
-            );
+                selectedWords = [];
 
+
+                wordContainer
+                    .querySelectorAll(
+                        ".word-button"
+                    )
+                    .forEach(
+                        function(button) {
+
+                            button.classList
+                                .remove(
+                                    "selected"
+                                );
+
+                        }
+                    );
+
+
+                updateAnswer();
+
+            }
+        );
+
+
+    function updateAnswer() {
 
         if (
             selectedWords.length === 0
         ) {
 
-            answerBox.textContent =
+            answerContainer.textContent =
                 "Select the words...";
 
         } else {
 
-            answerBox.textContent =
+            answerContainer.textContent =
                 selectedWords.join(
                     " "
                 );
@@ -751,8 +943,8 @@ function createScrambleQuestion(
         }
 
 
-        studentAnswers[
-            "part3-" + question.id
+        scrambleAnswers[
+            questionId
         ] =
             selectedWords.join(
                 " "
@@ -767,76 +959,64 @@ function createScrambleQuestion(
 
 
 /* =========================================================
+   SHUFFLE
+========================================================= */
+
+function shuffle(array) {
+
+    for (
+        let i = array.length - 1;
+        i > 0;
+        i--
+    ) {
+
+        const j =
+            Math.floor(
+                Math.random() *
+                (i + 1)
+            );
+
+
+        [
+            array[i],
+            array[j]
+        ] =
+        [
+            array[j],
+            array[i]
+        ];
+
+    }
+
+
+    return array;
+
+}
+
+
+/* =========================================================
    SUBMIT EXAM
 ========================================================= */
 
-function submitExam() {
+async function submitExam() {
 
-    /*
-     * Collect Part 1 answers.
-     */
+    if (
+        !currentExam ||
+        !currentUser
+    ) {
 
-    currentChapter
-        .parts
-        .part1
-        .forEach(
-            function(question) {
-
-                const input =
-                    document.getElementById(
-                        "part1-" +
-                        question.id
-                    );
-
-
-                studentAnswers[
-                    "part1-" +
-                    question.id
-                ] =
-                    input
-                        ? input.value.trim()
-                        : "";
-
-            }
+        alert(
+            "Exam information is missing."
         );
 
+        return;
 
-    /*
-     * Collect Part 2 answers.
-     */
+    }
 
-    currentChapter
-        .parts
-        .part2
-        .forEach(
-            function(question) {
-
-                const input =
-                    document.getElementById(
-                        "part2-" +
-                        question.id
-                    );
-
-
-                studentAnswers[
-                    "part2-" +
-                    question.id
-                ] =
-                    input
-                        ? input.value.trim()
-                        : "";
-
-            }
-        );
-
-
-    /*
-     * Confirm submission.
-     */
 
     const confirmed =
         confirm(
-            "Are you sure you want to submit your exam?"
+            "Are you sure you want to submit this exam?"
         );
 
 
@@ -847,32 +1027,190 @@ function submitExam() {
     }
 
 
-    console.log(
-        "Student:",
-        currentUser.username
-    );
+    const answers = [];
 
 
-    console.log(
-        "Chapter:",
-        currentChapter.chapter
-    );
+    /*
+     * Part 1
+     */
+
+    const part1Inputs =
+        document.querySelectorAll(
+            '[data-part="part1_translation"]'
+        );
 
 
-    console.log(
-        "Answers:",
-        studentAnswers
+    part1Inputs.forEach(
+        function(input) {
+
+            answers.push({
+
+                part:
+                    "part1_translation",
+
+                questionId:
+                    input.dataset.questionId,
+
+                answer:
+                    input.value.trim()
+
+            });
+
+        }
     );
 
 
     /*
-     * For now we only show the
-     * submitted page.
-     *
-     * Code.gs will be connected later.
+     * Part 2
      */
 
-    showResult();
+    const part2Inputs =
+        document.querySelectorAll(
+            '[data-part="part2_question"]'
+        );
+
+
+    part2Inputs.forEach(
+        function(input) {
+
+            answers.push({
+
+                part:
+                    "part2_question",
+
+                questionId:
+                    input.dataset.questionId,
+
+                answer:
+                    input.value.trim()
+
+            });
+
+        }
+    );
+
+
+    /*
+     * Part 3
+     */
+
+    const part3 =
+        currentExam.parts
+            .part3_scramble;
+
+
+    if (
+        part3 &&
+        part3.questions
+    ) {
+
+        part3.questions.forEach(
+            function(question) {
+
+                answers.push({
+
+                    part:
+                        "part3_scramble",
+
+                    questionId:
+                        String(
+                            question.id
+                        ),
+
+                    answer:
+                        scrambleAnswers[
+                            String(
+                                question.id
+                            )
+                        ] || ""
+
+                });
+
+            }
+        );
+
+    }
+
+
+    /*
+     * Disable submit button.
+     */
+
+    const submitButton =
+        document.querySelector(
+            ".submit-button"
+        );
+
+
+    if (submitButton) {
+
+        submitButton.disabled =
+            true;
+
+        submitButton.textContent =
+            "Submitting...";
+
+    }
+
+
+    try {
+
+        const result =
+            await api(
+                "submitExam",
+                {
+
+                    username:
+                        currentUser.username,
+
+                    exam:
+                        currentExam,
+
+                    answers:
+                        answers
+
+                }
+            );
+
+
+        if (
+            !result ||
+            !result.success
+        ) {
+
+            throw new Error(
+                result?.message ||
+                "Unable to submit exam."
+            );
+
+        }
+
+
+        showResult();
+
+
+    } catch (error) {
+
+        console.error(error);
+
+
+        alert(
+            error.message ||
+            "Unable to submit exam."
+        );
+
+
+        if (submitButton) {
+
+            submitButton.disabled =
+                false;
+
+            submitButton.textContent =
+                "Submit Exam";
+
+        }
+
+    }
 
 }
 
@@ -908,7 +1246,34 @@ function showResult() {
 
 function backToDashboard() {
 
-    showDashboard();
+    currentExam =
+        null;
+
+    currentChapter =
+        null;
+
+    scrambleAnswers =
+        {};
+
+
+    resultPage.classList.add(
+        "hidden"
+    );
+
+    examPage.classList.add(
+        "hidden"
+    );
+
+    loginPage.classList.add(
+        "hidden"
+    );
+
+    dashboardPage.classList.remove(
+        "hidden"
+    );
+
+
+    loadChapters();
 
 }
 
@@ -922,10 +1287,13 @@ function logout() {
     currentUser =
         null;
 
+    currentExam =
+        null;
+
     currentChapter =
         null;
 
-    studentAnswers =
+    scrambleAnswers =
         {};
 
 
@@ -950,23 +1318,62 @@ function logout() {
         .getElementById(
             "username"
         )
-        .value =
-        "";
+        .value = "";
 
 
     document
         .getElementById(
             "password"
         )
-        .value =
-        "";
+        .value = "";
 
 
     document
         .getElementById(
             "loginMessage"
         )
-        .textContent =
-        "";
+        .textContent = "";
 
 }
+
+
+/* =========================================================
+   HTML ESCAPE
+========================================================= */
+
+function escapeHTML(value) {
+
+    return String(
+        value ?? ""
+    )
+        .replace(
+            /&/g,
+            "&amp;"
+        )
+        .replace(
+            /</g,
+            "&lt;"
+        )
+        .replace(
+            />/g,
+            "&gt;"
+        )
+        .replace(
+            /"/g,
+            "&quot;"
+        )
+        .replace(
+            /'/g,
+            "&#039;"
+        );
+
+}
+
+
+/* =========================================================
+   START
+========================================================= */
+
+console.log(
+    "Chinese Class website loaded."
+);
